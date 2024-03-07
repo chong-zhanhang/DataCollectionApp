@@ -21,5 +21,14 @@
         android:padding="10dp"
         android:text="Button Test" />
 
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:background="@drawable/button_background"
+        android:padding="10dp"
+        android:text="Log Out"
+        android:id="@+id/logout"/>
+
 
 </LinearLayout>

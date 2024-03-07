@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
@@ -78,7 +79,8 @@ public class StartActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         if(FirebaseAuth.getInstance().getCurrentUser() != null){
-            startActivity(new Intent(StartActivity.this, RealMainActivity.class));
+            QuestionnaireUtil.checkPHQ9Activity(StartActivity.this);
+            //startActivity(new Intent(StartActivity.this, RealMainActivity.class));
             finish();
         }
     }

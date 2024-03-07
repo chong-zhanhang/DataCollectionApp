@@ -1,3 +1,9 @@
 <resources>
-    <string name="MindCheck_DC">MindCheckDataCollectionApp</string>
+    <string name="app_name">MindCheckDC</string>
+    <string name="male">Male</string>
+    <string name="female">Female</string>
+    <string-array name="gender_array">
+        <item>@string/male</item>
+        <item>@string/female</item>
+    </string-array>
 </resources>
