@@ -14,9 +14,13 @@ import co.thingthing.fleksy.core.languages.KeyboardLanguage
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FieldValue
+import java.io.File
+import java.io.FileInputStream
+import java.util.Properties
 
 import kotlin.math.pow
 import kotlin.math.sqrt
+
 
 class SampleKeyboardService : KeyboardService() {
 
@@ -34,6 +38,7 @@ class SampleKeyboardService : KeyboardService() {
 
     private val auth = FirebaseAuth.getInstance()
     private val user = auth.currentUser
+
 
     private fun getScreenDensity(context: Context): Float {
         val displayMetrics = DisplayMetrics()
@@ -59,9 +64,9 @@ class SampleKeyboardService : KeyboardService() {
         }
         val sortedNumbers = numbers.sorted()
         val middle = sortedNumbers.size / 2
-        return if(sortedNumbers.size % 2 == 0) {
+        return if (sortedNumbers.size % 2 == 0) {
             (sortedNumbers[middle - 1] + sortedNumbers[middle]) / 2.0f
-        }else{
+        } else {
             sortedNumbers[middle]
         }
     }
@@ -105,7 +110,15 @@ class SampleKeyboardService : KeyboardService() {
                 3 * ((n - 1).toFloat().pow(2) / ((n - 2) * (n - 3).toFloat()))
     }
 
-    private fun calculateSpeed(x1: Float, y1: Float, x2: Float, y2: Float, screenDensityX: Float, screenDensityY: Float, flightTime: Float): Float {
+    private fun calculateSpeed(
+        x1: Float,
+        y1: Float,
+        x2: Float,
+        y2: Float,
+        screenDensityX: Float,
+        screenDensityY: Float,
+        flightTime: Float
+    ): Float {
         val deltaX = ((x2 - x1) / screenDensityX) * 25.4f
         val deltaY = ((y2 - y1) / screenDensityY) * 25.4f
         return (sqrt(deltaX * deltaX + deltaY * deltaY.toDouble()).toFloat()) / flightTime
@@ -118,7 +131,7 @@ class SampleKeyboardService : KeyboardService() {
 
         eventBus.eventBasedDataCapture.subscribe {
             //Data Capture received here
-            when(it){
+            when (it) {
                 is EventBasedDataCaptureEvent.KeyStrokeCaptureEvent -> {
                     // get pressTime and releaseTime from API
                     val pressTime = it.keyStroke.pressTime
@@ -128,26 +141,28 @@ class SampleKeyboardService : KeyboardService() {
 
                     //Calculate HT, FT, SP, PFR from values above
                     val holdTime: Float = (releaseTime - pressTime).toFloat()
-                    val flightTime: Float = lastReleaseTime?.let { last -> (pressTime - last).toFloat() } ?: 0.0f
+                    val flightTime: Float =
+                        lastReleaseTime?.let { last -> (pressTime - last).toFloat() } ?: 0.0f
                     lastReleaseTime = releaseTime
                     var pfr = 0.0f
-                    var speed = calculateSpeed(xprev, yprev, keyPressEnd?.x ?:-1.0f ,
+                    var speed = calculateSpeed(
+                        xprev, yprev, keyPressEnd?.x ?: -1.0f,
                         keyPressEnd?.y ?: -1.0f, getPPIX(this), getPPIY(this), flightTime
                     )
 
-                    if(flightTime != 0.0f){
+                    if (flightTime != 0.0f) {
                         pfr = (holdTime / flightTime)
                         totalKeystrokes++
 
                         if (holdTime > 300) {
                             Log.d("HT", "Excluded: Unexceptionally long hold time")
-                        }else{
+                        } else {
                             HTList.add(holdTime)
                         }
-                        
+
                         if (flightTime > 3000 || flightTime < 0) {
                             Log.d("FT", "Excluded: Unexceptionally long flight time")
-                        }else{
+                        } else {
                             FTList.add(flightTime)
                         }
                         PFRList.add(pfr)
@@ -157,10 +172,11 @@ class SampleKeyboardService : KeyboardService() {
                             yprev = keyPressEnd.y
                         }
                         Log.d("KBTAGKS", totalKeystrokes.toString())
-                    }else{
+                    } else {
                         Log.d("KBTAGPFR", "Cannot divide by 0")
                     }
                 }
+
                 is EventBasedDataCaptureEvent.DeleteCaptureEvent -> {}
                 is EventBasedDataCaptureEvent.KeyPlaneCaptureEvent -> {}
                 is EventBasedDataCaptureEvent.WordCaptureEvent -> {}
@@ -174,7 +190,16 @@ class SampleKeyboardService : KeyboardService() {
                     val condition3 = totalKeystrokes > 8
                     val allConditionsMet = listOf(condition1, condition2, condition3).all { it }
 
-                    if(allConditionsMet){
+                    if (!condition2) {
+                        Log.d("DEBUG", "User is null")
+                    }
+                    if (!condition1) {
+                        Log.d("DEBUG", "End timestamp not 0")
+                    }
+                    if (!condition3) {
+                        Log.d("DEBUG", "Total keystrokes less than 8")
+                    }
+                    if (allConditionsMet) {
                         Log.d("DEBUG", "Session ended, all conditions met")
                         val medianHT = calculateMedian(HTList)
                         val medianFT = calculateMedian(FTList)
@@ -200,7 +225,25 @@ class SampleKeyboardService : KeyboardService() {
 
                         // If all the val above > 0, then add to database
                         //condition error! skewness and kurtosis can be below 0
-                        if (!(listOf(medianHT, medianFT, medianSP, medianPFR, sdHT, sdFT, sdSP, sdPFR, skewnessHT, skewnessFT, skewnessSP, skewnessPFR, kurtosisHT, kurtosisFT, kurtosisSP, kurtosisPFR).any { it -> it.isNaN() })){
+                        if (!(listOf(
+                                medianHT,
+                                medianFT,
+                                medianSP,
+                                medianPFR,
+                                sdHT,
+                                sdFT,
+                                sdSP,
+                                sdPFR,
+                                skewnessHT,
+                                skewnessFT,
+                                skewnessSP,
+                                skewnessPFR,
+                                kurtosisHT,
+                                kurtosisFT,
+                                kurtosisSP,
+                                kurtosisPFR
+                            ).any { it -> it.isNaN() })
+                        ) {
                             Log.d("DEBUG", "Conditions met, writing to database")
                             val db = FirebaseFirestore.getInstance()
                             val userId = user?.uid
@@ -228,40 +271,54 @@ class SampleKeyboardService : KeyboardService() {
 
                             db.collection("typingSession").add(data)
                                 .addOnSuccessListener { documentReference ->
-                                    Log.d("DBFAdd", "Document added with ID: ${documentReference.id}")
+                                    Log.d(
+                                        "DBFAdd",
+                                        "Document added with ID: ${documentReference.id}"
+                                    )
                                 }
                                 .addOnFailureListener { e ->
                                     Log.d("DBFail", "Error adding document: $e")
                                 }
-                        }else{
+                        } else {
                             Log.d("DEBUG", "Some conditions not met")
                         }
-
-                        HTList.clear()
-                        FTList.clear()
-                        SPList.clear()
-                        PFRList.clear()
-                        totalKeystrokes = 0
-                    }
-                    else{
+                    } else {
                         Log.d("DEBUG", "End Timestamp not 0")
                     }
+                    HTList.clear()
+                    FTList.clear()
+                    SPList.clear()
+                    PFRList.clear()
+                    totalKeystrokes = 0
                 }
+
                 is EventBasedDataCaptureEvent.StressUpdateCaptureEvent -> {}
             }
         }
     }
 
-    override fun createConfiguration() =
-        KeyboardConfiguration(
+    override fun createConfiguration(): KeyboardConfiguration {
+        val props = Properties()
+        try {
+            applicationContext.assets.open("secrets.properties").use { stream ->
+                props.load(stream)
+            }
+        } catch (e: Exception) {
+            Log.e("DEBUG", "Failed to load secrets.properties", e)
+        }
+
+        val licenseKey = props.getProperty("LICENSE_KEY")
+        val licenseSecret = props.getProperty("LICENSE_SECRET")
+
+        return KeyboardConfiguration(
             language = KeyboardConfiguration.LanguageConfiguration(
                 current = currentLanguage,
                 automaticDownload = true,
                 orderMode = KeyboardConfiguration.LanguageOrderMode.STATIC
             ),
             license = KeyboardConfiguration.LicenseConfiguration(
-                licenseKey = "4d81689f-302f-4611-80de-55d4051cdd2c",
-                licenseSecret = "df1c1a75664cf18ed71164542390187d"
+                licenseKey = licenseKey,
+                licenseSecret = licenseSecret
             ),
             dataCapture = KeyboardConfiguration.DataCaptureMode.EventBased(
                 EventDataConfiguration(
@@ -272,4 +329,5 @@ class SampleKeyboardService : KeyboardService() {
                 )
             )
         )
+    }
 }
