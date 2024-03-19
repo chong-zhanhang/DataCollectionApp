@@ -3,6 +3,7 @@ package com.example.mindcheckdatacollectionapp.ui.theme;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;

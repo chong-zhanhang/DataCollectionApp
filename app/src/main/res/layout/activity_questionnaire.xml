@@ -18,9 +18,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/questionTop"
+            android:textStyle="bold"
+            android:textColor="@color/primary_blue"
             android:text="Over the last 2 weeks, how often have you been bothered by any of the following problems?"
             android:textSize="25sp"
-            android:layout_margin="10dp" />
+            android:layout_margin="10dp"
+            android:layout_marginBottom="20dp"/>
 
         <TextView
             android:layout_width="wrap_content"

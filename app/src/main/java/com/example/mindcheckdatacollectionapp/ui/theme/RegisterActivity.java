@@ -76,7 +76,7 @@ public class RegisterActivity extends AppCompatActivity {
 
             DatePickerDialog datePickerDialog = new DatePickerDialog(this,
                     (view, year, monthOfYear, dayofMonth) -> {
-                        showDate(year, monthOfYear=1, dayofMonth);
+                        showDate(year, monthOfYear+1, dayofMonth);
                     }, year, month, day);
             datePickerDialog.show();
         });

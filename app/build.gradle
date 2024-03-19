@@ -4,6 +4,13 @@ plugins {
     id 'com.google.gms.google-services'
 }
 
+def secretsPropertiesFile = rootProject.file("secrets.properties")
+def secretsProperties = new Properties()
+
+if (secretsPropertiesFile.exists()) {
+    secretsProperties.load(new FileInputStream(secretsPropertiesFile))
+}
+
 android {
     namespace 'com.example.mindcheckdatacollectionapp'
     compileSdk 34
@@ -14,6 +21,13 @@ android {
         targetSdk 34
         versionCode 1
         versionName "1.0"
+
+        buildFeatures {
+            buildConfig true
+        }
+
+        buildConfigField 'String', 'LICENSE_KEY', "\"${secretsProperties['LICENSE_KEY']}\""
+        buildConfigField 'String', 'LICENSE_SECRET', "\"${secretsProperties['LICENSE_SECRET']}\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -61,6 +75,7 @@ dependencies {
     implementation 'androidx.compose.ui:ui-tooling-preview'
     implementation 'androidx.compose.material3:material3'
     implementation "co.thingthing.fleksycore:fleksycore-release:4.7.2"
+    implementation 'com.google.android.material:material:1.11.0'
     implementation 'com.google.firebase:firebase-database:20.3.1'
     implementation 'com.google.firebase:firebase-auth:22.3.1'
     implementation 'com.google.firebase:firebase-firestore:24.10.3'
@@ -69,6 +84,8 @@ dependencies {
     implementation 'com.google.android.material:material:1.11.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'com.google.firebase:firebase-functions:20.4.0'
+    implementation 'de.hdodenhof:circleimageview:3.1.0'
+    implementation 'com.google.firebase:firebase-messaging:23.4.1'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'

@@ -1,34 +1,101 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     tools:context=".ui.theme.RealMainActivity">
-    <EditText
+
+
+<ScrollView
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="AnyString"
-        android:id="@+id/testingTextField" />
+        android:orientation="vertical">
 
-    <Button
-        android:id="@+id/testingButton"
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Your 5 most recent journals:"
+            android:textSize="25sp"
+            android:textStyle="bold"
+            android:textColor="@color/primary_blue"
+            android:padding="8dp" />
+
+
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/journalRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginTop="16dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:scrollbars="vertical"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="@color/black" />
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="120dp" />
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:hint="Write Your New Journal Here"
+            android:id="@+id/journalTextField"
+            android:scrollbars="vertical"/>
+
+        <Button
+            android:id="@+id/submitButton"
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:layout_gravity="center"
+            android:background="@drawable/button_background"
+            android:padding="10dp"
+            android:text="Submit"
+            android:textColor="@color/white" />
+
+        <Button
+            android:id="@+id/moreInfo"
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:layout_gravity="center"
+            android:background="@drawable/button_background"
+            android:padding="10dp"
+            android:text="More Info"
+            android:textColor="@color/white" />
+
+    </LinearLayout>
+
+</ScrollView>
+
+
+    <FrameLayout
+        android:id="@+id/fragment_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="15dp"
-        android:background="@drawable/button_background"
-        android:padding="10dp"
-        android:text="Button Test" />
+        android:layout_above="@+id/menu_bottom" />
 
-    <Button
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="15dp"
-        android:background="@drawable/button_background"
-        android:padding="10dp"
-        android:text="Log Out"
-        android:id="@+id/logout"/>
-
-
-</LinearLayout>
+        android:id="@+id/menu_bottom"
+        android:layout_alignParentBottom="true">
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/bottom_navigation"
+            app:itemIconTint="@color/selector"
+            app:labelVisibilityMode="unlabeled"
+            android:background="?android:attr/windowBackground"
+            app:menu="@menu/bottom_menu" />
+    </com.google.android.material.appbar.AppBarLayout>
+</RelativeLayout>

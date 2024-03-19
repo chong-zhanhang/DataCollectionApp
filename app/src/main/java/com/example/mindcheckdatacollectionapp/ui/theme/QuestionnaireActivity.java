@@ -3,7 +3,11 @@ package com.example.mindcheckdatacollectionapp.ui.theme;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -30,34 +34,59 @@ public class QuestionnaireActivity extends AppCompatActivity {
 
     private RadioGroup[] questionGroups = new RadioGroup[9];
     private Button submit;
+    private static String returnable;
     private static final String COLLECTION_NAME = "mobileUser";
-    private static final String DOCUMENT_ID = retrieveDocument();
+    private static String DOCUMENT_ID;
     private static final int DEPRESSION_THRESHOLD_SCORE = 5;
+    public interface FirestoreCallback {
+        void onCallback(String documentId);
+    }
 
-    private static String retrieveDocument() {
+    public static void scheduleReminder(Context context, long submittedTime) {
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(context, QuestionnaireNotificationPublisher.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+
+        long twoWeeksInMillis = 1000 * 60 * 60 * 24 *14;
+        long minuteInMillis = 1000 * 60; // for testing purpose only
+        Log.d("DEBUG", String.valueOf(submittedTime));
+
+        alarmManager.set(AlarmManager.RTC_WAKEUP, submittedTime + twoWeeksInMillis, pendingIntent);
+        Log.d("DEBUG", "REMINDER");
+    }
+
+    private static void retrieveDocument(FirestoreCallback callback) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        Log.d("DEBUG", "100");
         final String[] docId = new String[1];
+
         if (currentUser != null) {
+            Log.d("DEBUG", "150");
             String userID = currentUser.getUid();
-            db.collection(COLLECTION_NAME)
+            Log.d("DEBUG", userID);
+            db.collection("mobileUser")
                     .whereEqualTo("userID", userID)
                     .limit(1)
                     .get()
                     .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
                         @Override
                         public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                            Log.d("DEBUG", "175");
                             if (task.isSuccessful() && task.getResult() != null) {
                                 for (DocumentSnapshot document : task.getResult()) {
                                     docId[0] = document.getId();
+                                    callback.onCallback(docId[0]);
+                                    Log.d("DEBUG", "200");
                                 }
+                                Log.d("DEBUGD", docId[0]);
                             } else {
                                 Log.e("DEBUG", "Cannot retrieve user ID");
+                                callback.onCallback(null);
                             }
                         }
                     });
         }
-        return docId[0];
     }
 
     @Override
@@ -78,74 +107,109 @@ public class QuestionnaireActivity extends AppCompatActivity {
         submit = findViewById(R.id.submit);
 
         submit.setOnClickListener(new View.OnClickListener() {
+
             @Override
             public void onClick(View v) {
-                int[] responses = new int[questionGroups.length];
-                boolean allAnswered = true;
+                Log.d("DEBUG", "Area 1");
 
-                for(int i = 0; i < questionGroups.length; i++){
-                    int radioButtonID = questionGroups[i].getCheckedRadioButtonId();
-                    View radioButton = questionGroups[i].findViewById(radioButtonID);
-                    int idx = questionGroups[i].indexOfChild(radioButton);
-
-                    if (idx == -1){
-                        allAnswered = false;
-                        break;
-                    }else {
-                        responses[i] = idx;
+                retrieveDocument(new FirestoreCallback() {
+                    @Override
+                    public void onCallback(String documentId) {
+                        if (documentId != null) {
+                            DOCUMENT_ID = documentId;
+                            Log.d("DEBUGS", DOCUMENT_ID);
+                            scheduleReminder(QuestionnaireActivity.this, submitQuestionnaire(documentId));
+                        } else {
+                            DOCUMENT_ID = "";
+                            Log.d("DEBUG", "Document ID not found");
+                            Toast.makeText(QuestionnaireActivity.this, "Document ID not found", Toast.LENGTH_SHORT).show();
+                        }
                     }
-                }
-
-                if (allAnswered) {
-                    int sumOfScores = 0;
-                    Map<String, Object> questionnaireData = new HashMap<>();
-
-                    FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-                    String userID = currentUser != null ? currentUser.getUid() : "anonymous";
-
-                    for (int i = 0; i < responses.length; i++){
-                        sumOfScores += responses[i];
-                        questionnaireData.put("Question " + (i + 1), responses[i]);
-                    }
-                    questionnaireData.put("TotalScore", sumOfScores);
-                    questionnaireData.put("UserID", userID);
-                    questionnaireData.put("Timestamp", FieldValue.serverTimestamp());
-
-                    updateUserDocument(sumOfScores);
-
-                    FirebaseFirestore db = FirebaseFirestore.getInstance();
-                    db.collection("questionnaire")
-                                    .add(questionnaireData)
-                                    .addOnSuccessListener(documentReference -> Toast.makeText(QuestionnaireActivity.this, "Data Stored Successfully with ID: " + documentReference, Toast.LENGTH_SHORT).show())
-                                    .addOnFailureListener(e -> Toast.makeText(QuestionnaireActivity.this, "Error storing data: " + e.getMessage(), Toast.LENGTH_SHORT).show());
-
-                    Toast.makeText(QuestionnaireActivity.this, "Questionnaire Submitted", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(QuestionnaireActivity.this, "Please answer all the questions.", Toast.LENGTH_SHORT).show();
-                }
-                startActivity(new Intent(QuestionnaireActivity.this, RealMainActivity.class));
-                finish();
+                });
             }
         });
     }
 
-    private void updateUserDocument(int sumOfScores) {
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        DocumentReference userDocument = db.collection(COLLECTION_NAME).document(DOCUMENT_ID);
+    private long submitQuestionnaire(String documentId) {
+        int[] responses = new int[questionGroups.length];
+        boolean allAnswered = true;
 
-        boolean isDepressed = false;
-        if (sumOfScores >= DEPRESSION_THRESHOLD_SCORE) {
-            isDepressed = true;
+        for(int i = 0; i < questionGroups.length; i++){
+            int radioButtonID = questionGroups[i].getCheckedRadioButtonId();
+            View radioButton = questionGroups[i].findViewById(radioButtonID);
+            int idx = questionGroups[i].indexOfChild(radioButton);
+
+            if (idx == -1){
+                allAnswered = false;
+                break;
+            }else {
+                responses[i] = idx;
+            }
         }
+        Log.d("DEBUG", "Area 2");
+        long submittedTime = System.currentTimeMillis();
+
+        if (allAnswered) {
+            int sumOfScores = 0;
+            Map<String, Object> questionnaireData = new HashMap<>();
+
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            String userID = currentUser != null ? currentUser.getUid() : "anonymous";
+
+            for (int i = 0; i < responses.length; i++){
+                sumOfScores += responses[i];
+                questionnaireData.put("Question " + (i + 1), responses[i]);
+            }
+            questionnaireData.put("TotalScore", sumOfScores);
+            questionnaireData.put("UserID", userID);
+            questionnaireData.put("Timestamp", FieldValue.serverTimestamp());
+            submittedTime = System.currentTimeMillis();
+            Log.d("DEBUG", "Area 3");
+
+            updateUserDocument(documentId, sumOfScores);
+            Log.d("DEBUG", "Area 3.3");
+
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+            db.collection("questionnaire")
+                    .add(questionnaireData)
+                    .addOnSuccessListener(documentReference -> Toast.makeText(QuestionnaireActivity.this, "Data Stored Successfully with ID: " + documentReference, Toast.LENGTH_SHORT).show())
+                    .addOnFailureListener(e -> Toast.makeText(QuestionnaireActivity.this, "Error storing data: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+            Log.d("DEBUG", "Area 3.5");
+
+            Toast.makeText(QuestionnaireActivity.this, "Questionnaire Submitted", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(QuestionnaireActivity.this, RealMainActivity.class));
+            Log.d("DEBUG", "Area 4");
+            finish();
+        } else {
+            Toast.makeText(QuestionnaireActivity.this, "Please answer all the questions.", Toast.LENGTH_SHORT).show();
+        }
+        saveSubmittedTime(QuestionnaireActivity.this, submittedTime);
+        return submittedTime;
+    }
+
+    public static void saveSubmittedTime(Context contexts, long submittedTime) {
+        SharedPreferences sharedPreferences = contexts.getSharedPreferences("QuestionnairePrefs", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putLong("submittedTime", submittedTime);
+        editor.apply();
+    }
+
+    private void updateUserDocument(String documentId, int sumOfScores) {
+        Log.d("DEBUG", "Area -1");
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        DocumentReference userDocument = db.collection(COLLECTION_NAME).document(documentId);
+        Log.d("DEBUG", "Area -2");
+        boolean isDepressed = sumOfScores >= DEPRESSION_THRESHOLD_SCORE;
 
         Map<String, Object> updateDepressionStatus = new HashMap<>();
         updateDepressionStatus.put("isDepressed", isDepressed);
+        Log.d("DEBUG", "Area -3");
 
         //Check if "isDepressed" field exists in the document
-        userDocument.get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult() != null){
-                userDocument.set(updateDepressionStatus, SetOptions.merge());
-            }
+        userDocument.set(updateDepressionStatus, SetOptions.merge()).addOnSuccessListener(unused -> {
+            Log.d("DEBUG", "User depression status updated successfully.");
+        }).addOnFailureListener(e -> {
+            Log.e("DEBUG", "Failed to update user depression status.", e);
         });
     }
 }

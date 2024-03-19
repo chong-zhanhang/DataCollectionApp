@@ -8,34 +8,43 @@
     android:padding="15dp"
     tools:context=".ui.theme.RegisterActivity">
 
-    <ImageView
-        android:layout_width="wrap_content"
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:layout_width="200dp"
         android:layout_height="200dp"
+        android:layout_marginVertical="20dp"
+        android:layout_gravity="center"
         android:src="@drawable/mindchecklogo"
+        app:civ_border_color="#4DE0EE"
+        app:civ_border_width="2dp"
+        android:background="@drawable/circle_background"
         android:padding="25dp"/>
 
     <EditText
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="50dp"
         android:background="@drawable/edit_text_background"
         android:hint="Email"
         android:padding="10dp"
+        android:layout_marginVertical="5dp"
         android:id="@+id/email" />
     <EditText
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="50dp"
         android:background="@drawable/edit_text_background"
         android:hint="Password"
         android:padding="10dp"
+        android:layout_marginVertical="5dp"
         android:id="@+id/password" />
 
     <Button
-        android:layout_width="match_parent"
+        android:layout_width="250dp"
         android:layout_height="wrap_content"
         android:background="@drawable/button_background"
         android:layout_marginTop="15dp"
         android:text="LOGIN"
+        android:textColor="@color/white"
         android:padding="10dp"
+        android:layout_gravity="center"
         android:id="@+id/login"/>
 
     <TextView
@@ -44,7 +53,9 @@
         android:text="New to MindCheck? Register here"
         android:layout_marginTop="15dp"
         android:id="@+id/register_user"
-        android:textSize="@dimen/font_x_large"/>
+        android:textSize="@dimen/font_x_large"
+        android:textColor="@color/primary_blue"
+        android:layout_gravity="center"/>
 
 
 </LinearLayout>

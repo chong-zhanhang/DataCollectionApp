@@ -76,11 +76,13 @@
             android:id="@+id/password" />
 
         <Button
-            android:layout_width="match_parent"
+            android:layout_width="250dp"
             android:layout_height="wrap_content"
             android:background="@drawable/button_background"
             android:layout_marginTop="50dp"
+            android:layout_gravity="center"
             android:text="REGISTER"
+            android:textColor="@color/white"
             android:padding="10dp"
             android:id="@+id/register"/>
 
@@ -88,7 +90,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Registered? Login here"
+            android:textColor="@color/primary_blue"
             android:layout_marginTop="15dp"
+            android:layout_gravity="center"
             android:id="@+id/login_user"
             android:textSize="@dimen/font_x_large"/>
 
