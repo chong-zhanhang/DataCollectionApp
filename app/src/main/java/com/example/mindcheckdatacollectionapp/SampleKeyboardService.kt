@@ -317,8 +317,8 @@ class SampleKeyboardService : KeyboardService() {
                 orderMode = KeyboardConfiguration.LanguageOrderMode.STATIC
             ),
             license = KeyboardConfiguration.LicenseConfiguration(
-                licenseKey = "4d81689f-302f-4611-80de-55d4051cdd2c",
-                licenseSecret = "df1c1a75664cf18ed71164542390187d"
+                licenseKey = licenseKey,
+                licenseSecret = licenseSecret
             ),
             dataCapture = KeyboardConfiguration.DataCaptureMode.EventBased(
                 EventDataConfiguration(
